@@ -1,0 +1,36 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /e/mongodb_data:/data/db
+
+  backend:
+    image: node:iron-bullseye
+    container_name: nodejs
+    working_dir: /usr/src/app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./crud-api:/usr/src/app
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/miapp
+    depends_on:
+      - mongo
+    command: sh -c "npm install && node app.js"
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nextjs-frontend
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3000
+    depends_on:
+      - backend
