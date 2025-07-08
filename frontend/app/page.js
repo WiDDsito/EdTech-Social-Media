@@ -1,23 +1,29 @@
 'use client';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { GetPostsQuery } from '../application/GetPostsQuery';
 import Image from 'next/image';
 
+
 export default function Home() {
-  const [data, setData] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Aquí puedes hacer una llamada a tu API
-    const fetchData = async () => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await axios.get('http://localhost:3000/api');
-        setData(response.data);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+        const query = new GetPostsQuery();
+        const result = await query.execute();
+        setPosts(result);
+      } catch (err) {
+        setError('Error al obtener los posts');
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchData();
+    fetchPosts();
   }, []);
 
   return (
@@ -32,10 +38,14 @@ export default function Home() {
         />
       </div>
       <h1 className="text-3xl font-bold mb-6">Mi Aplicación</h1>
+      {loading && <div>Cargando posts...</div>}
+      {error && <div className="text-red-500">{error}</div>}
       <div className="grid gap-4">
-        {data.map((item, index) => (
-          <div key={index} className="p-4 border rounded shadow">
-            <pre>{JSON.stringify(item, null, 2)}</pre>
+        {posts.map((post) => (
+          <div key={post.id} className="p-4 border rounded shadow">
+            <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
+            <p className="mb-2">{post.content}</p>
+            <div className="text-sm text-gray-500">Por: {post.author} | {post.createdAt && new Date(post.createdAt).toLocaleString()}</div>
           </div>
         ))}
       </div>

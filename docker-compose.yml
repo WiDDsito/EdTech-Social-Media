@@ -1,28 +1,34 @@
 services:
-  mongo:
-    image: mongo:6
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - /e/mongodb_data:/data/db
-
   backend:
-    image: node:iron-bullseye
-    container_name: nodejs
-    working_dir: /usr/src/app
+    build:
+      context: ./EDTECH-BACK/edtech-api
+    container_name: edtech_backend
     ports:
       - "3000:3000"
-    volumes:
-      - ./crud-api:/usr/src/app
     environment:
-      - MONGO_URL=mongodb://mongo:27017/miapp
+      - MONGODB_URI=mongodb://admin:admin123@mongo:27017/edtech_db?authSource=admin
+      - PORT=3000
     depends_on:
       - mongo
-    command: sh -c "npm install && node app.js"
+    networks:
+      - insta-net
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - insta-net
 
   frontend:
-    build: 
+    build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: nextjs-frontend
@@ -34,3 +40,12 @@ services:
       - NEXT_PUBLIC_API_URL=http://backend:3000
     depends_on:
       - backend
+    networks:
+      - insta-net
+
+networks:
+  insta-net:
+    driver: bridge
+
+volumes:
+  mongo_data:
